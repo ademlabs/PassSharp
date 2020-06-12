@@ -1,3 +1,7 @@
+## [2.0.0](https://github.com/daxko/PassSharp/releases/tag/v2.0.0) - 2019-02-04
+
+Update to PassWrite to use instance methods instead of static.
+
 ## [1.2.0](https://github.com/daxko/PassSharp/releases/tag/v1.2.0) - 2019-09-23
 
 * Now project targets .NetStandard 2.0 (see (docs)[https://docs.microsoft.com/es-es/dotnet/standard/net-standard]))
