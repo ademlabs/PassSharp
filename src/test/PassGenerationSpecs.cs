@@ -1,4 +1,4 @@
-﻿using Machine.Specifications;
+using Machine.Specifications;
 using PassSharp;
 using PassSharp.Fields;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using ServiceStack.Text;
 using System.IO.Compression;
 using System.Globalization;
 using System.Linq;
+using System;
 
 #pragma warning disable 414
 
@@ -17,20 +18,9 @@ namespace Test
 
   public class PassWriterMock : PassWriter
   {
-
-    public static new Dictionary<string, string> GenerateManifest()
-    {
-      return PassWriter.GenerateManifest();
-    }
-
-    public static new byte[] GenerateSignature(byte[] bytes, X509Certificate2 appleCert, X509Certificate2 passCert)
-    {
-      return PassWriter.GenerateSignature(bytes, appleCert, passCert);
-    }
-
     public static new string ToJson(Pass pass)
     {
-      return PassWriter.ToJson(pass);
+      return new PassWriter().ToJson(pass);
     }
 
   }
@@ -39,10 +29,9 @@ namespace Test
   public class when_generating_a_pass
   {
     static Pass pass;
-    static string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-    static X509Certificate2 appleCert = new X509Certificate2(Path.Combine(path, @"fixtures/certificates/apple.cer"));
-    static X509Certificate2 passCert = new X509Certificate2(Path.Combine(path, @"fixtures/certificates/test.pfx"), "", X509KeyStorageFlags.Exportable);
-    static string imagePath = Path.Combine(path, @"fixtures/asset.png");
+    static X509Certificate2 appleCert = new X509Certificate2(Path.Combine("fixtures","certificates","apple.cer"));
+    static X509Certificate2 passCert = new X509Certificate2(Path.Combine("fixtures","certificates","test.pfx"), "", X509KeyStorageFlags.Exportable);
+    static string imagePath = Path.Combine("fixtures","asset.png");
 
     Establish context = () => {
       pass = new Pass {
@@ -54,6 +43,7 @@ namespace Test
         teamIdentifier = "U1234567",
         icon = new Asset(imagePath)
       };
+      pass.expirationDate = new DateTime(2016, 2, 3, 10, 30, 45, DateTimeKind.Utc);
       pass.AddLocation(new Location { });
       pass.AddField(FieldType.Primary, new Field { key = "pass-field", label = "Pass Field Label", value = "foobar" });
       pass.AddLocalization(new Localization(CultureInfo.GetCultureInfo("EN")));
@@ -71,6 +61,7 @@ namespace Test
       It should_not_contain_localization_field = () => json.Get("localizations").ShouldBeNull();
       It should_not_contain_empty_lists = () => json.Get("beacons").ShouldBeNull();
       It should_set_pass_type = () => json.Get("generic").ShouldNotBeNull();
+      It should_set_expiration_date = () => json.Get("expirationDate").ShouldEqual("2016-02-03T10:30:45.0000000Z");
       It should_contain_pass_pass_type = () => json.Get("generic").ShouldNotBeNull();
       It should_contain_pass_fields = () => {
         var fields = json.Object("generic").GetArray<Dictionary<string, string>>("primaryFields")[0];
@@ -103,7 +94,7 @@ namespace Test
 
       Because of = () => {
           var stream = new MemoryStream();
-          PassWriter.WriteToStream(pass, stream, appleCert, passCert);
+          new PassWriter().WriteToStream(pass, stream, appleCert, passCert);
           zip = new ZipArchive(stream);
       };
 
@@ -143,7 +134,7 @@ namespace Test
 
       Because of = () => {
         var stream = new MemoryStream();
-        PassWriter.WriteToStream(pass, stream, appleCert, passCert);
+        new PassWriter().WriteToStream(pass, stream, appleCert, passCert);
         zip = new ZipArchive(stream);
       };
 
